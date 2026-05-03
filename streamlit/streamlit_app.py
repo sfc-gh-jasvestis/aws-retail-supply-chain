@@ -17,26 +17,50 @@ st.title("Supply Chain Intelligence Hub")
 st.caption("Retail/CPG Demo — Snowflake AI Data Cloud + AWS S3 + Glue/Iceberg")
 
 with st.sidebar:
-    st.markdown("### Data Lake Bridge")
-    st.markdown("""
-    **Partner files** land in **Amazon S3**.
-    Snowflake ingests, transforms with **Dynamic Tables**,
-    runs **ML forecasts**, and writes results back
-    as **Iceberg tables** — your Athena users see them instantly.
-    """)
-    st.divider()
-    st.markdown("**Snowflake Capabilities**")
-    st.markdown("- Dynamic Tables (5 min lag)")
-    st.markdown("- Cortex AI (sentiment, classify)")
-    st.markdown("- Cortex Search (contracts)")
-    st.markdown("- ML FORECAST + ANOMALY")
-    st.markdown("- Iceberg → AWS Glue")
-    st.markdown("- Semantic View → Agent")
-    st.divider()
-    st.markdown("**AWS Services**")
-    st.markdown("- S3 (partner file ingestion)")
-    st.markdown("- Glue Data Catalog")
-    st.markdown("- QuickSight + Amazon Q")
+    st.markdown("### Architecture")
+    st.code("""
+┌──────────────────────────┐
+│     Amazon S3 Bucket     │
+│  (Partner PO / Demand)   │
+└─────────┬────────────────┘
+          │ External Stage
+          ▼
+┌──────────────────────────┐
+│      Snowflake           │
+│  ┌────────────────────┐  │
+│  │ RAW Schema         │  │
+│  │ Suppliers, Products│  │
+│  │ POs, Inventory,    │  │
+│  │ Demand, Contracts  │  │
+│  └────────┬───────────┘  │
+│           ▼              │
+│  ┌────────────────────┐  │
+│  │ CURATED (Dynamic)  │  │
+│  │ • Inventory Health │  │
+│  │ • Supplier Perf.   │  │
+│  │ • Demand Trends    │  │
+│  └────────┬───────────┘  │
+│           ▼              │
+│  ┌────────────────────┐  │
+│  │ AI + ML + SEARCH   │  │
+│  │ • Cortex Search    │  │
+│  │ • Semantic View    │  │
+│  │ • FORECAST Model   │  │
+│  │ • ANOMALY Model    │  │
+│  └────────┬───────────┘  │
+│           ▼              │
+│  ┌────────────────────┐  │
+│  │ LAKE (Iceberg)     │  │
+│  │ Forecast → S3/Glue │  │
+│  └────────────────────┘  │
+└───────────┬──────────────┘
+            │ Iceberg Export
+            ▼
+┌──────────────────────────┐
+│  AWS Glue Data Catalog   │
+│  Athena / QuickSight + Q │
+└──────────────────────────┘
+""", language=None)
     st.divider()
     region_filter = st.multiselect("Filter by Region", ["ASEAN", "ANZ", "North Asia", "South Asia"], default=["ASEAN", "ANZ", "North Asia", "South Asia"])
 
@@ -199,7 +223,7 @@ with tab3:
     st.divider()
     st.subheader("Iceberg Export Status")
     ice_count = session.sql("SELECT COUNT(*) AS CNT FROM RETAIL_SUPPLY_CHAIN.LAKE.DEMAND_FORECAST_ICEBERG").to_pandas()
-    st.info(f"**{ice_count['CNT'].iloc[0]:,}** forecast rows exported to Iceberg table → AWS Glue catalog. Queryable from Athena, EMR, or any Iceberg-compatible engine.")
+    st.info(f"**{ice_count['CNT'].iloc[0]:,}** forecast rows exported to Iceberg table → AWS Glue catalog. Queryable from Athena, QuickSight, or any Iceberg-compatible engine.")
 
 
 with tab4:
@@ -310,9 +334,19 @@ with tab5:
                 safe_aq = agent_query.replace("'", "''")
                 result = session.sql(f"""
                     SELECT SNOWFLAKE.CORTEX.COMPLETE('claude-4-sonnet',
-                        'You are a supply chain analyst. Generate a SQL query against the semantic view RETAIL_SUPPLY_CHAIN.AI.SUPPLY_CHAIN_SEMANTIC_VIEW to answer this question. The view has tables: inventory (inventory health), suppliers (supplier performance), demand (demand trends). Return ONLY the SQL, no explanation.
+                        'You are a supply chain analyst. Generate a SQL query to answer the question below.
 
-                        Question: {safe_aq}')
+Use these tables from RETAIL_SUPPLY_CHAIN.CURATED:
+
+INVENTORY_HEALTH columns: PRODUCT_NAME, CATEGORY, WAREHOUSE_NAME, REGION, INVENTORY_STATUS (STOCKOUT/CRITICAL/LOW/HEALTHY/OVERSTOCK), QUANTITY_ON_HAND, REORDER_POINT, DAYS_OF_SUPPLY, INVENTORY_VALUE, SUPPLIER_NAME, SNAPSHOT_DATE
+
+SUPPLIER_PERFORMANCE columns: SUPPLIER_NAME, COUNTRY, CATEGORY, PERFORMANCE_GRADE (A/B/C/D), ON_TIME_DELIVERY_PCT, AVG_ACTUAL_LEAD_TIME, CONTRACTED_LEAD_TIME, TOTAL_POS, DELIVERED, DELAYED, CANCELLED, TOTAL_SPEND, RELIABILITY_SCORE
+
+DEMAND_TRENDS columns: PRODUCT_NAME, CATEGORY, WAREHOUSE_NAME, REGION, SIGNAL_DATE, CHANNEL, UNITS_SOLD, ROLLING_7D_UNITS, ROLLING_30D_UNITS, AVG_DAILY_7D, AVG_DAILY_30D
+
+Return ONLY the SQL, no explanation.
+
+Question: {safe_aq}')
                 """).collect()[0][0]
                 sql_text = str(result).strip()
                 if sql_text.startswith('"'):

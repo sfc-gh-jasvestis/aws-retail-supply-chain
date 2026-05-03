@@ -1,8 +1,8 @@
 # Demo Script: Supply Chain Intelligence Hub
-## 3-Minute Recorded Walkthrough
+## ~3-Minute Recorded Walkthrough
 **Format**: Screen recording with voiceover
 **Target**: Customer meeting / booth loop / social share
-**Pre-requisites**: Data loaded, Streamlit deployed, QuickSight dashboard published
+**Pre-requisites**: Data loaded, Streamlit deployed
 
 ---
 
@@ -11,7 +11,7 @@
 | Persona | Role | Tool | What they care about |
 |---|---|---|---|
 | **Supply Chain Analyst** | Day-to-day operations | Streamlit in Snowflake | Stockouts, supplier performance, demand forecasts, contract terms |
-| **VP Supply Chain** | Executive oversight | Amazon QuickSight + Amazon Q | Inventory KPIs, supplier risk heatmap, fill rates by region |
+| **VP Supply Chain** | Executive oversight | Streamlit / Snowflake Intelligence | Inventory KPIs, supplier risk, NL queries |
 
 ---
 
@@ -19,14 +19,14 @@
 
 | Layer | Component | Detail |
 |---|---|---|
-| **Ingest (AWS)** | Amazon S3 | Supplier PO files, demand feeds, contract documents |
+| **Ingest** | Snowflake RAW | Supplier PO files, demand feeds, contract documents |
 | **RAW** | 7 tables | SUPPLIERS (50), PRODUCTS (500), WAREHOUSES (10), INVENTORY_SNAPSHOTS (50K), PURCHASE_ORDERS (10K), DEMAND_SIGNALS (100K), SUPPLIER_CONTRACTS (100) |
 | **CURATED** | 3 Dynamic Tables | INVENTORY_HEALTH, SUPPLIER_PERFORMANCE, DEMAND_TRENDS |
 | **AI** | Cortex Search + Semantic View | Contract search (100 docs), Agent (11 dims, 9 metrics) |
-| **ML** | FORECAST + ANOMALY | 14-day demand forecast (7K predictions), inventory anomaly detection |
-| **LAKE** | Iceberg → Glue | Forecast results as Iceberg table on S3, registered in AWS Glue catalog |
+| **ML** | FORECAST + ANOMALY | 14-period demand forecast (7K predictions across 500 products), inventory anomaly detection |
 | **Consumption** | Streamlit | 5-tab Supply Chain Hub |
-| | QuickSight | 2 datasets + Q Topic |
+
+> For optional AWS integration (S3 ingestion, Iceberg export to Glue, Athena, QuickSight), see `aws/README.md`.
 
 ---
 
@@ -34,10 +34,10 @@
 
 - [ ] Verify Dynamic Tables: `SHOW DYNAMIC TABLES IN DATABASE RETAIL_SUPPLY_CHAIN` (all ACTIVE)
 - [ ] Open Streamlit: `RETAIL_SUPPLY_CHAIN.APP.SUPPLY_CHAIN_HUB_APP`
-- [ ] Confirm stockouts exist (Tab 1 — check red metrics)
+- [ ] Confirm stockouts exist (Tab 1 — expect 31 stockouts, 10 in Singapore Hub, 3 in Fresh Produce)
+- [ ] Confirm supplier grades: A(8), B(16), C(14), D(12) — check Tab 2
 - [ ] Test Cortex Search: Tab 4, click "What are the late delivery penalties?" — confirm results
 - [ ] Test Forecast: Tab 3, select a product — confirm chart renders
-- [ ] Open QuickSight: https://us-west-2.quicksight.aws.amazon.com/
 - [ ] Audio: quiet room, external mic
 - [ ] Resolution: 1920x1080
 
@@ -45,60 +45,67 @@
 
 ## Script
 
-### [0:00–0:30] THE PROBLEM & ARCHITECTURE
+### [0:00–0:20] THE PROBLEM & ARCHITECTURE
 
-**Show**: Architecture slide or sidebar
+**Show**: Architecture sidebar in Streamlit app
 
-> "Your supply chain runs on data from 50 suppliers across 12 APJ countries. Partner files land in Amazon S3. Snowflake ingests them, transforms with Dynamic Tables that refresh every 5 minutes, runs ML forecasts, and — here's the kicker — writes results back to your data lake as Iceberg tables. Your Athena users see them instantly. Zero migration, zero ETL."
+> "Imagine you're managing a supply chain across 50 suppliers in 12 APJ countries. Snowflake handles everything — **Dynamic Tables** that refresh every 5 minutes, **ML Forecast** for demand prediction, **Cortex Search** over 100 supplier contracts, and a **Semantic View** so anyone can ask questions in plain English. Let me show you."
 
-### [0:30–1:00] TAB 1: INVENTORY HEALTH
+### [0:20–0:50] TAB 1: INVENTORY HEALTH
 
 **Show**: Click Inventory Health tab
 
-> "Let's look at inventory. Six KPIs across 10 warehouses. We've got [X] stockouts and [X] critical items right now. The Dynamic Tables flagged these automatically."
+**Tech**: `Dynamic Tables` (5-min refresh)
+
+> "Six KPIs across 10 warehouses. We've got 31 stockouts and 323 critical items — flagged automatically by **Dynamic Tables** that refresh every 5 minutes. No ETL jobs, no Airflow."
 
 **Action**: Scroll to stockout table
 
-> "These products hit their reorder point. The Singapore Hub has 3 stockouts in Fresh Produce. Let's find out why — check the supplier."
+> "Singapore Hub has 10 stockouts — 4 of them from the same supplier. Let's check the scorecard."
 
-### [1:00–1:30] TAB 2: SUPPLIER SCORECARD
+### [0:50–1:15] TAB 2: SUPPLIER SCORECARD
 
 **Show**: Click Supplier Scorecard tab
 
-> "50 suppliers graded A through D based on on-time delivery. [Name] is Grade D — only [X]% on-time. Their contracted lead time is 14 days but they're averaging [X]. That's your stockout root cause."
+**Tech**: `Dynamic Tables` (supplier aggregation)
 
-### [1:30–2:00] TAB 4: CONTRACT SEARCH
+> "50 suppliers graded A through D. Incheon Frozen Logistics — Grade D, 0% on-time. Contracted lead time is 3 days, they're averaging 40. That one supplier caused 4 stockouts in Singapore Hub. That's your root cause. All from one **Dynamic Table** SQL statement."
 
-**Show**: Click Contract Search tab, click "What are the late delivery penalties?"
+### [1:15–1:45] TAB 4: CONTRACT SEARCH
 
-> "What does their contract say about late deliveries? Cortex Search finds it instantly across 100 contracts. The AI summary says: 1% per day late, capped at 15%, with automatic price reduction after 3 late deliveries in 30 days."
+**Show**: Click Contract Search tab, type "Incheon Frozen Logistics delivery penalties"
 
-### [2:00–2:30] TAB 3: DEMAND FORECAST
+**Tech**: `Cortex Search` + `Cortex AI COMPLETE`
+
+> "So Incheon is the problem — what does their contract actually say? **Cortex Search** across 100 supplier contracts, no vector DB to manage. There's Incheon's Fresh Produce Supply Agreement — penalties for spoilage exceeding 2%: 150% credit. **Cortex COMPLETE** summarizes the key terms instantly."
+
+### [1:45–2:05] TAB 3: DEMAND FORECAST
 
 **Show**: Click Demand Forecast tab, select a product
 
-> "Snowflake ML FORECAST — 14-day ahead, per product, per warehouse. No Python, no SageMaker, no infrastructure. These forecast results? Already in your Glue catalog as an Iceberg table. Open Athena — same data, zero copy."
+**Tech**: `ML FORECAST`, `ML ANOMALY_DETECTION`
 
-**Show**: Point to Iceberg export status at bottom
+> "**ML FORECAST** — 14 periods ahead, all 500 products, 7,000 predictions. No Python, no infrastructure to manage. **ANOMALY_DETECTION** flags unusual inventory movements below."
 
-### [2:30–2:50] TAB 5: ASK SUPPLY CHAIN
+### [2:05–2:25] TAB 5: ASK SUPPLY CHAIN
 
 **Show**: Click Ask Supply Chain tab
 
-> "And for the questions you haven't thought of yet — natural language. 'Which warehouses have the lowest fill rate this week?' The Semantic View powers it."
+**Tech**: `Semantic View` + `Cortex Agent`
 
-**Action**: Type or click the sample question, show results
+> "Natural language questions — a **Semantic View** with 11 dimensions and 9 metrics lets **Cortex Agent** turn plain English into SQL. 'Which warehouses have the most stockouts?' — answered instantly."
 
-### [2:50–3:00] CLOSE
+**Action**: Click the sample question, show results
 
-> "One platform. Partner files from S3, ML forecasts back to the data lake, and a VP who asks questions in plain English. That's Supply Chain Intelligence on Snowflake."
+### [2:25–2:35] CLOSE
+
+> "**Dynamic Tables**, **Cortex Search**, **ML Forecast**, **Anomaly Detection**, and **Semantic Views** — five Snowflake capabilities, one platform. From stockout detection to contract analysis to demand forecasting — all connected, all live. That's Supply Chain Intelligence on Snowflake."
 
 ---
 
-## Key Demo Differentiators (vs FSI demos)
+## Key Demo Differentiators
 
-1. **No Bedrock** — Cortex AI does everything natively. Shows Snowflake can do it alone.
-2. **Iceberg export** — ML results flow BACK to the data lake. Unique bidirectional story.
-3. **S3 file ingestion** — partner data comes from outside Snowflake.
-4. **Supply chain specific** — stockouts, fill rates, lead times, contract penalties.
-5. **QuickSight Q**: "Which suppliers missed SLA this month?" / "What's the fill rate by region?"
+1. **Pure Snowflake** — Cortex AI, Dynamic Tables, ML, Search, Semantic Views — no external services needed.
+2. **Optional AWS integration** — S3 ingestion + Iceberg export to Glue/Athena (see `aws/README.md`).
+3. **Supply chain specific** — stockouts, fill rates, lead times, contract penalties.
+4. **Connected narrative** — stockout → supplier root cause → contract terms → forecast.

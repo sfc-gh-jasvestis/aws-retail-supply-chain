@@ -2,10 +2,10 @@
 set -euo pipefail
 
 REGION="us-west-2"
-ACCT="__AWS_ACCOUNT_ID__"
-DS_ID="fsi-snowflake-ds"
+ACCT=${AWS_ACCOUNT_ID:?"Set AWS_ACCOUNT_ID env var"}
+DS_ID=${QS_DATASOURCE_ID:?"Set QS_DATASOURCE_ID env var (your Snowflake datasource in QuickSight)"}
 DS_ARN="arn:aws:quicksight:${REGION}:${ACCT}:datasource/${DS_ID}"
-QS_USER_ARN="arn:aws:quicksight:us-west-2:__AWS_ACCOUNT_ID__:user/default/__AWS_ACCOUNT_ID__"
+QS_USER_ARN=${QS_USER_ARN:?"Set QS_USER_ARN env var (your QuickSight user ARN)"}
 
 fail() { echo "FAILED: $1"; exit 1; }
 ok()   { echo "  OK: $1"; }
