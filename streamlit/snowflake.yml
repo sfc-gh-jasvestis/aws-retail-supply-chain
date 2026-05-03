@@ -1,0 +1,8 @@
+definition_version: 2
+streamlit:
+  name: SUPPLY_CHAIN_HUB_APP
+  title: Supply Chain Intelligence Hub
+  comment: "Retail/CPG Demo — Snowflake AI Data Cloud + AWS S3 + Glue/Iceberg"
+  query_warehouse: WH_SUPPLY_CHAIN
+  main_file: streamlit_app.py
+  stage: RETAIL_SUPPLY_CHAIN.APP.SUPPLY_CHAIN_APP_STAGE
