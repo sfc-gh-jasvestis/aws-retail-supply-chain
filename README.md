@@ -3,29 +3,23 @@
 
 > An end-to-end supply chain analytics platform across 10 APJ warehouses and 50 suppliers — Dynamic Tables, Cortex AI, ML Forecast, Cortex Search, and Semantic Views in a 5-tab Streamlit app.
 
+## Architecture
+
+A retail supply chain intelligence hub built on **Snowflake** (Dynamic Tables, ML.FORECAST, ML.ANOMALY_DETECTION, Cortex Search, semantic view, Cortex Analyst) and **AWS** (S3, Apache Iceberg, AWS Glue, Athena, QuickSight + Amazon Q). Partner POs and demand feeds land in S3; Snowflake builds the curated layer; the forecast lands back in the lake as Iceberg.
+
+```mermaid
+flowchart LR
+    S3[S3 partner POs and demand feeds] --> SF[Snowflake Dynamic Tables]
+    SF --> ML[ML.FORECAST + ML.ANOMALY_DETECTION]
+    SF --> CSearch[Cortex Search 100 supplier contracts]
+    SF --> SemView[Semantic View 11 dims 9 metrics]
+    ML --> ICE[Iceberg on S3]
+    ICE --> GLUE[AWS Glue catalog retail_demos_iceberg]
+    GLUE --> ATH[Amazon Athena]
+    SF --> ST[Streamlit Supply Chain Hub]
+    SF --> QS[QuickSight + Amazon Q]
 ```
-┌─────────────────────────────────────────────────────────┐
-│                       Snowflake                         │
-│                                                         │
-│  ┌───────────┐    ┌──────────────────┐    ┌──────────┐  │
-│  │ RAW       │    │ CURATED          │    │ AI + ML  │  │
-│  │ 7 tables  │──► │ Dynamic Tables   │──► │ Cortex   │  │
-│  │ 50K+ rows │    │ (5 min refresh)  │    │ Search   │  │
-│  └───────────┘    └──────────────────┘    │ FORECAST │  │
-│                                           │ ANOMALY  │  │
-│                   ┌──────────────────┐    └──────────┘  │
-│                   │ Semantic View    │                   │
-│                   │ 11 dims, 9 metrics│                  │
-│                   └────────┬─────────┘                   │
-│                            ▼                             │
-│              ┌──────────────────────────┐                │
-│              │  Streamlit App (5 tabs)  │                │
-│              │  Cortex Agent (NL → SQL) │                │
-│              └──────────────────────────┘                │
-└─────────────────────────────────────────────────────────┘
-         Optional: S3 ingestion + Iceberg → Glue/Athena
-                   (see aws/README.md)
-```
+
 
 ## What It Does
 
