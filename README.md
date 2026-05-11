@@ -19,6 +19,29 @@ flowchart LR
     SF --> QS[QuickSight + Amazon Q]
 ```
 
+## Snowflake Capabilities
+
+| Capability | Implementation |
+|-----------|---------------|
+| Dynamic Tables | INVENTORY_HEALTH / SUPPLIER_PERFORMANCE / DEMAND_TRENDS |
+| ML Functions | ML.FORECAST (14-period demand) + ML.ANOMALY_DETECTION (inventory) |
+| Cortex Search | 100 supplier contracts indexed |
+| Cortex Agent | SupplyChainAnalyst + ContractSearch tools |
+| Semantic View | 11 dimensions, 9 metrics over 3 curated tables |
+| Streamlit | 5-tab Supply Chain Hub |
+| Iceberg Tables | Forecast export to S3 for cross-platform access |
+
+## AWS Services
+
+| Service | Role in Demo |
+|---------|-------------|
+| Amazon S3 | Partner POs and demand feed landing zone |
+| Apache Iceberg | Open table format for forecast export |
+| AWS Glue | Iceberg catalog (retail_demos_iceberg) |
+| Amazon Athena | Federated query over forecast Iceberg tables |
+| Amazon QuickSight | Executive supply chain dashboard |
+| Amazon Q | Natural language analytics for VP Supply Chain |
+
 ## Personas
 
 | Persona | Role | Key Questions |
