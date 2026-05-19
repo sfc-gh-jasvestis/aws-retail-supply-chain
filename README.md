@@ -94,6 +94,14 @@ Run the SQL scripts in `snowflake/` (skip `01_integrations.sql`) and deploy the 
 ### Full AWS + Snowflake
 Run all SQL scripts including `01_integrations.sql`, deploy the main Streamlit app from `streamlit/`, then run the QuickSight setup from `quicksight/`.
 
+## Business Impact
+
+Industry research and Snowflake customer outcomes:
+- **AI demand forecasting** improves accuracy 20-50% over traditional methods -- McKinsey
+- **Global retail stockout losses**: $1.14 trillion per year -- IHL Group
+- **Tapestry** (Coach, Kate Spade -- Snowflake customer): supply chain data sharing reduced from 6-8 weeks to half a day -- snowflake.com/customers
+- **Inventory carrying cost reduction** of 20-30% with AI-driven optimization -- Industry benchmark
+
 ## Key Demo Numbers
 
 - **50 suppliers** scored with on-time %, quality, and cost metrics
@@ -104,3 +112,5 @@ Run all SQL scripts including `01_integrations.sql`, deploy the main Streamlit a
 ## License
 
 Apache 2.0 — See [LICENSE](LICENSE) for details.
+
+This is a personal demo project and is not an official Snowflake offering. It comes with no support or warranty. Industry metrics cited are from publicly available third-party research and Snowflake customer stories; they represent reported outcomes and are not guarantees of results.
