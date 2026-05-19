@@ -102,6 +102,8 @@ Industry research and Snowflake customer outcomes:
 - **Tapestry** (Coach, Kate Spade -- Snowflake customer): supply chain data sharing reduced from 6-8 weeks to half a day -- snowflake.com/customers
 - **Inventory carrying cost reduction** of 20-30% with AI-driven optimization -- Industry benchmark
 
+- **Penske Logistics** consolidated all supply chain performance indicators on Snowflake, enabling 5-year trend analysis in 15 minutes -- snowflake.com/customers
+
 ## Key Demo Numbers
 
 - **50 suppliers** scored with on-time %, quality, and cost metrics
