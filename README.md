@@ -99,10 +99,10 @@ Run all SQL scripts including `01_integrations.sql`, deploy the main Streamlit a
 Industry research and Snowflake customer outcomes:
 - **AI demand forecasting** improves accuracy 20-50% over traditional methods -- McKinsey
 - **Global retail stockout losses**: $1.14 trillion per year -- IHL Group
-- **Tapestry** (Coach, Kate Spade -- Snowflake customer): supply chain data sharing reduced from 6-8 weeks to half a day -- snowflake.com/customers
+- **Tapestry** (Coach, Kate Spade -- Snowflake customer): supply chain data sharing reduced from 6-8 weeks to half a day -- [snowflake.com/customers/tapestry](https://www.snowflake.com/en/customers/all-customers/case-study/tapestry/)
 - **Inventory carrying cost reduction** of 20-30% with AI-driven optimization -- Industry benchmark
 
-- **Penske Logistics** consolidated all supply chain performance indicators on Snowflake, enabling 5-year trend analysis in 15 minutes -- snowflake.com/customers
+- **Penske Logistics** consolidated all supply chain performance indicators on Snowflake, enabling 5-year trend analysis in 15 minutes -- [snowflake.com/customers/penske](https://www.snowflake.com/en/customers/all-customers/case-study/penske/)
 
 ## Key Demo Numbers
 
