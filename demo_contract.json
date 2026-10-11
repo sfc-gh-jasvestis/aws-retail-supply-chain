@@ -1,0 +1,81 @@
+{
+  "version": 1,
+  "repo": "aws-singapore-retail-supply-chain",
+  "operation": "on-demand",
+  "data_classification": "synthetic demonstration only",
+  "currency": "none (volumes in thousands of cases)",
+  "grains": {
+    "RAW.SUPPLIERS": "one row per supplier (planning area x product category)",
+    "RAW.SUPPLIER_DAILY": "one row per supplier per day (90 days)",
+    "RAW.SKU_SOURCING": "one row per supplier (SKU sourcing snapshot)",
+    "CURATED.PERFORMANCE_SUMMARY": "one row per supplier",
+    "CURATED.TREND_ANALYSIS": "one row per day",
+    "CURATED.SIGNAL_SUMMARY": "one row per exception signal",
+    "CURATED.KPI_SUMMARY": "one row per KPI",
+    "ML.DELIVERY_RISK_SCORES": "one row per supplier (latest day)"
+  },
+  "metrics": {
+    "On-Time Delivery (cases)": "100 * SUM(ONTIME_KUNITS) / SUM(SHIPPED_KUNITS)",
+    "Inbound Shipments": "SUM(SHIPMENT_COUNT)",
+    "Cases Shipped (millions)": "SUM(SHIPPED_KUNITS) / 1e3",
+    "Delivery Exception Flags": "SUM(FLAG_COUNT)",
+    "Confirmed Delivery Misses": "SUM(CONFIRMED_COUNT)",
+    "Flag Precision": "100 * SUM(CONFIRMED_COUNT) / SUM(FLAG_COUNT)",
+    "Pallets Held at Receiving": "SUM(LOTS_QUARANTINED)",
+    "Supplier Review Completion": "100 * SUM(REVIEW_DONE) / SUM(REVIEW_DUE)",
+    "Suppliers Monitored": "COUNT(RAW.SUPPLIERS)",
+    "Alternate-Supplier Coverage": "100 * SUM(LEAST(ON_FILE_QTY, REQUIRED_QTY)) / SUM(REQUIRED_QTY)",
+    "Approvals Pending": "SUM(PENDING_QTY)",
+    "Active SKUs": "SUM(REQUIRED_QTY)"
+  },
+  "chart_bindings": {
+    "daily_shipments": [
+      "CURATED.TREND_ANALYSIS.METRIC_DATE",
+      "SHIPMENT_COUNT",
+      "FLAG_COUNT"
+    ],
+    "flags_by_signal": [
+      "CURATED.SIGNAL_SUMMARY.RISK_SIGNAL",
+      "FLAG_COUNT",
+      "CONFIRMED_COUNT"
+    ],
+    "review_vs_confirmed": [
+      "CURATED.PERFORMANCE_SUMMARY.REVIEW_PCT",
+      "CONFIRMED_COUNT"
+    ],
+    "quicksight_delivery_risk": [
+      "ENTITY_ID",
+      "MAX(MISS_PROB_7D)"
+    ]
+  },
+  "freshness": "MAX(EVENT_DATE) is an observation watermark; requestedAt is not freshness",
+  "required_capabilities": {
+    "core_pipeline": "Curated KPIs reconcile to a RAW recomputation (run_core.py checks this on every build)",
+    "forecast_and_anomaly": "14-day network-wide inbound shipment FORECAST; ASN quantity variance ANOMALY_DETECTION (train 75 days, detect last 15)",
+    "search": "Cortex Search SEARCH.DELIVERY_SOP_SEARCH over synthetic delivery-exception follow-up SOPs (one per product category and exception signal)",
+    "semantic_analytics": "Semantic view APP.SUPPLY_CHAIN_ANALYTICS and Cortex Agent APP.SUPPLY_CHAIN_AGENT using analyst + search tools",
+    "grounded_ai": "Agent answers return generated SQL and SOP citations; the action memo uses only KPI, supplier, exception-signal and risk rows",
+    "quicksight": "DIRECT_QUERY dashboard (suppliers, daily inbound shipments, confirmed delivery misses by supplier, delivery-miss risk, shipment events loaded) over an existing Snowflake data source",
+    "quicksight_q": "Amazon Q topic over the curated datasets for natural-language questions",
+    "aws_ingestion": "Amazon Data Firehose (Direct PUT) of supplier inbound-shipment events -> S3 (shipments/) -> Snowpipe AUTO_INGEST into RAW.LIVE_SHIPMENTS",
+    "notifications": "APP.LIVE_SHIPMENT_ALERT logs new FLAG events to APP.ALERT_LOG and emails via SYSTEM$SEND_EMAIL; alert and tasks suspended between demos",
+    "orchestration": "Task graph APP.TASK_REFRESH_CURATED -> APP.TASK_RESCORE_RISK run on demand (EXECUTE TASK)",
+    "app_deployment": "SPCS service APP.SG_RETAIL_SUPPLY_CHAIN_APP; routes /api/data, /api/ask, /api/agent",
+    "delivery_risk_model": "Snowflake ML CLASSIFICATION of P(confirmed delivery miss in next 7 days) per supplier, evaluated on an out-of-time holdout"
+  },
+  "builds": {
+    "snowflake": {
+      "database": "SINGAPORE_RETAIL_SUPPLY_CHAIN_SNOWFLAKE",
+      "app_setting": "DEMO_PLATFORM=snowflake",
+      "memo": "Cortex AI_COMPLETE (claude-sonnet-4-5)",
+      "live_shipments": "APP.SIMULATE_SHIPMENTS(n)"
+    },
+    "aws": {
+      "database": "SINGAPORE_RETAIL_SUPPLY_CHAIN_AWS",
+      "app_setting": "DEMO_PLATFORM=aws",
+      "memo": "Amazon Bedrock Claude Sonnet 4.5 via APP.BEDROCK_GENERATE",
+      "capabilities": "see required_capabilities",
+      "live_shipments": "Amazon Data Firehose -> S3 -> Snowpipe"
+    }
+  }
+}
